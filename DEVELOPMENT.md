@@ -8,7 +8,7 @@ This file will be used for code architecture/planning purposes.
 ## System Design
 - CAD storage: object storage (e.g. aws s3)
 - database: postgresql (managed or not?)
-- authentication: oauth ???
+- authentication: clerk ??
 - server: digital ocean droplet
 - desktop client: tauri app
 - web interface: hosted on vercel
