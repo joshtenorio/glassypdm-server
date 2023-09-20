@@ -13,13 +13,10 @@ datasource db {
 model File {
   id  Int @default(autoincrement()) @id
   path String @unique
+  userEmail String
   revision Int
   commitId String
   hash String
   size Int
-}
-
-model FileLink {
-  id  Int @default(autoincrement()) @id
   s3Link String
 }

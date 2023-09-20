@@ -1,8 +1,10 @@
-import { Controller, Post, Get, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileMetadataDto } from './ingest.dto';
 import { IngestService } from './ingest.service';
 import { InjectS3, S3 } from 'nestjs-s3';
 import { InjectMinioClient, MinioClient } from '@svtslv/nestjs-minio';
+import { Express } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('ingest')
 export class IngestController {
@@ -11,9 +13,13 @@ export class IngestController {
         @InjectMinioClient() private readonly s3: MinioClient
         ) {}
 
-    @Post('metadata')
-    async upload(@Body() metadata: FileMetadataDto): Promise<string> {
+    @UseInterceptors(FileInterceptor('file'))
+    @Post('upload')
+    async upload(
+        @Body() metadata: FileMetadataDto,
+        @UploadedFile() file: Express.Multer.File): Promise<string> {
         return await this.ingestService.createFileRevision(metadata);
+        // TODO upload to s3
     }
 
     @Get('test-s3')
