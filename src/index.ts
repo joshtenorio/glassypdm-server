@@ -43,6 +43,60 @@ app.get("/", (req: any, res: any) => {
     res.send("nerd");
 });
 
+// get files changed in latest commit
+app.get("/info/commit/latest", (req: any, res: any) => {
+    console.log("GET @ /info/latest");
+    res.send("test");
+});
+
+// get a specific commit by id
+app.get("/info/commit/:commit", (req: any, res: any) => {
+
+});
+
+// get the current state of the repository
+// commit # and latest revision of each path
+app.get("/info/state", (req: any, res: any) => {
+
+});
+
+// get all revisions of a file
+app.get("/info/file/:path", (req: any, res: any) => {
+    try {
+        const param: string = req.params.path;
+        const path = param.replaceAll("|", "\\");
+        console.log(path);
+        dbConnection.execute(
+            'SELECT * FROM file WHERE path = ?', [path],
+            function(err: any, results: any, fields: any) {
+                console.log(results);
+            }
+        );
+    } catch(err) {
+        console.error(err);
+    }
+
+    res.send("asdf");
+});
+
+// get latest revision of each file
+app.get("/info/repo", (req: any, res: any) => {
+    dbConnection.execute(
+        'SELECT * FROM file',
+        function(err: any, results: any, fields: any) {
+            console.log(results);
+            console.log(fields);
+        }
+    );
+    res.send("asdf");
+});
+
+// download a file by its s3 key
+app.get("/download/:key", (req: any, res: any) => {
+    const key: string = req.params.key;
+    res.send("lmao");
+});
+
 app.post("/ingest", upload.single("key"), (req: any, res: any) => {
     console.log("POST @ /ingest");
     console.log(req.body);
