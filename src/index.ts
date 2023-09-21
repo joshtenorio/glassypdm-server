@@ -45,11 +45,31 @@ app.get("/", (req: any, res: any) => {
 
 app.post("/ingest", upload.single("key"), (req: any, res: any) => {
     console.log("POST @ /ingest");
-    console.log(req.body); //req.body["path"]
-    console.log(req.file);
-    console.log(req.file.location); // link to object
-    console.log(req.file.etag); // etag
-    console.log(req.file.key); // key (name of object)
+    console.log(req.body);
+    try {
+        const body = req.body;
+        const path = body["path"];
+        const commit = body["commit"];
+        const size = body["size"];
+        const hash = body["hash"];
+        const s3key = req.file.key;
+        console.log(path);
+        console.log(commit);
+        console.log(size);
+        console.log(hash);
+        console.log(s3key);
+
+        dbConnection.execute(
+            'INSERT INTO file(path, commit, size, hash, s3key) VALUES (?, ?, ?, ?, ?)',
+            [path, commit, size, hash, s3key],
+            function(err: any, results: any, fields: any) {
+                console.log(results);
+                console.log(fields);
+            }
+        );
+    } catch(err: any) {
+        console.error(err.message);
+    }
     res.send("bro");
 });
 
