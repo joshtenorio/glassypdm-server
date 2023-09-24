@@ -1,9 +1,10 @@
 import express from "express";
 import cors from "cors";
 import { config } from "dotenv";
+import { CADFile, ProjectState } from "./types";
 
 const multer = require("multer");
-const mysql = require("mysql2");
+const mysql = require("mysql2/promise");
 const multerS3 = require("multer-s3");
 const { S3Client } = require("@aws-sdk/client-s3");
 
@@ -34,9 +35,9 @@ const upload = multer({
 const app = express();
 app.use(cors());
 
-const dbConnection = mysql.createConnection(process.env.DATABASE_URL);
+const pool = mysql.createPool(process.env.DATABASE_URL);
 
-dbConnection.connect();
+//db.connect();
 
 app.get("/", (req: any, res: any) => {
     console.log(req.body);
@@ -51,13 +52,40 @@ app.get("/info/commit/latest", (req: any, res: any) => {
 
 // get a specific commit by id
 app.get("/info/commit/:commit", (req: any, res: any) => {
-
+    res.send("test");
 });
 
 // get the current state of the repository
 // commit # and latest revision of each path
-app.get("/info/state", (req: any, res: any) => {
+app.get("/info/project", async(req: any, res: any) => {
+    try {
+        let output: ProjectState = {
+            commit: 4,
+            files: []
+        };
+        // get latest commit #
+        let [rows, fields] = await pool.execute(
+            "SELECT MAX(commit) as latest FROM file", []
+        );
+        output.commit = rows[0]['latest'];
 
+        // get files
+        [rows, fields] = await pool.execute(
+            "SELECT a.path, a.commit, a.size, a.hash, a.id FROM file a \
+            INNER JOIN ( \
+                SELECT path, MAX(id) id \
+                FROM file \
+                GROUP BY path \
+            ) b ON a.path = b.path AND a.id = b.id \
+            "
+        );
+        output.files = rows;
+
+        // send response
+        res.send(JSON.stringify(output));
+    } catch(err) {
+        console.error(err);
+    }
 });
 
 // get all revisions of a file
@@ -66,7 +94,7 @@ app.get("/info/file/:path", (req: any, res: any) => {
         const param: string = req.params.path;
         const path = param.replaceAll("|", "\\");
         console.log(path);
-        dbConnection.execute(
+        pool.execute(
             'SELECT * FROM file WHERE path = ?', [path],
             function(err: any, results: any, fields: any) {
                 console.log(results);
@@ -81,7 +109,7 @@ app.get("/info/file/:path", (req: any, res: any) => {
 
 // get latest revision of each file
 app.get("/info/repo", (req: any, res: any) => {
-    dbConnection.execute(
+    pool.execute(
         'SELECT * FROM file',
         function(err: any, results: any, fields: any) {
             console.log(results);
@@ -113,7 +141,7 @@ app.post("/ingest", upload.single("key"), (req: any, res: any) => {
         console.log(hash);
         console.log(s3key);
 
-        dbConnection.execute(
+        pool.execute(
             'INSERT INTO file(path, commit, size, hash, s3key) VALUES (?, ?, ?, ?, ?)',
             [path, commit, size, hash, s3key],
             function(err: any, results: any, fields: any) {
