@@ -67,11 +67,11 @@ app.get("/info/project", async(req: any, res: any) => {
         let [rows, fields] = await pool.execute(
             "SELECT MAX(commit) as latest FROM file", []
         );
-        output.commit = rows[0]['latest'];
+        output.commit = rows[0]["latest"];
 
         // get files
         [rows, fields] = await pool.execute(
-            "SELECT a.path, a.commit, a.size, a.hash, FROM file a \
+            "SELECT a.path, a.commit, a.size, a.hash FROM file a \
             INNER JOIN ( \
                 SELECT path, MAX(id) id \
                 FROM file \
