@@ -61,7 +61,7 @@ app.get("/info/commit/:commit", (req: any, res: any) => {
 app.get("/info/project", async(req: any, res: any) => {
     try {
         let output: ProjectState = {
-            commit: 4,
+            commit: 0,
             files: []
         };
         // get latest commit #
