@@ -37,7 +37,7 @@ app.use(cors());
 
 const pool = mysql.createPool(process.env.DATABASE_URL);
 
-//db.connect();
+//db.connect()
 
 app.get("/", (req: any, res: any) => {
     console.log(req.body);
