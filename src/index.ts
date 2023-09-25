@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import { config } from "dotenv";
 import { CADFile, ProjectState } from "./types";
-
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import {getSignedUrl, S3RequestPresigner} from "@aws-sdk/s3-request-presigner";
 const multer = require("multer");
 const mysql = require("mysql2/promise");
 const multerS3 = require("multer-s3");
@@ -41,7 +42,7 @@ const pool = mysql.createPool(process.env.DATABASE_URL);
 
 app.get("/", (req: any, res: any) => {
     console.log(req.body);
-    res.send("nerd");
+    res.send({"nerd": "lmao"});
 });
 
 // get files changed in latest commit
@@ -120,9 +121,30 @@ app.get("/info/repo", (req: any, res: any) => {
 });
 
 // download a file by its s3 key
-app.get("/download/:key", (req: any, res: any) => {
+app.get("/download/s3/:key", (req: any, res: any) => {
     const key: string = req.params.key;
     res.send("lmao");
+});
+
+// download a file's latest revision by path
+app.get("/download/file/:path", async(req: any, res: any) => {
+    const param: string = req.params.path;
+    const path = param.replaceAll("|", "\\");
+
+    // get s3 key by path, with latest revision
+    const [rows, fields] = await pool.execute(
+        "SELECT s3key FROM file WHERE path = ? GROUP BY id ", [path]
+    )
+    const key: string = rows[0]["s3key"].toString();
+    console.log(key);
+    const command = new GetObjectCommand({
+        Bucket: "glassy-pdm",
+        Key: key,
+    });
+    // presigned url, expires in 10 minutes
+    const url = await getSignedUrl(s3, command, {expiresIn: 600} );
+    console.log(url);
+    res.send({"s3Url": url});
 });
 
 app.post("/ingest", upload.single("key"), (req: any, res: any) => {
