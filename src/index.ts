@@ -153,15 +153,21 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         "SELECT s3key FROM file WHERE path = ? GROUP BY id ", [path]
     )
     const key: string = rows[0]["s3key"].toString();
-    console.log(key);
-    const command = new GetObjectCommand({
-        Bucket: "glassy-pdm",
-        Key: key,
-    });
-    // presigned url, expires in 10 minutes
-    const url = await getSignedUrl(s3, command, {expiresIn: 600} );
-    console.log(url);
-    res.send({"s3Url": url});
+    if (key) {
+        console.log(key);
+        const command = new GetObjectCommand({
+            Bucket: "glassy-pdm",
+            Key: key,
+        });
+        // presigned url, expires in 10 minutes
+        const url = await getSignedUrl(s3, command, {expiresIn: 600} );
+        console.log(url);
+        res.send({"s3Url": url});
+    }
+    else {
+        res.send({"s3Url": "delete"});
+    }
+
 });
 
 app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, res: any) => {
@@ -172,21 +178,28 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
         const commit = body["commit"];
         const size = body["size"];
         const hash = body["hash"];
-        const s3key = req.file.key;
-        console.log(path);
-        console.log(commit);
-        console.log(size);
-        console.log(hash);
-        console.log(s3key);
+        if(req.file) {
+            const s3key = req.file.key;
+            pool.execute(
+                'INSERT INTO file(path, commit, size, hash, s3key) VALUES (?, ?, ?, ?, ?)',
+                [path, commit, size, hash, s3key],
+                function(err: any, results: any, fields: any) {
+                    console.log(results);
+                    console.log(fields);
+                }
+            );
+        }
+        else {
+            pool.execute(
+                'INSERT INTO file(path, commit, size, hash) VALUES (?, ?, ?, ?)',
+                [path, commit, size, hash],
+                function(err: any, results: any, fields: any) {
+                    console.log(results);
+                    console.log(fields);
+                }
+            );
+        }
 
-        pool.execute(
-            'INSERT INTO file(path, commit, size, hash, s3key) VALUES (?, ?, ?, ?, ?)',
-            [path, commit, size, hash, s3key],
-            function(err: any, results: any, fields: any) {
-                console.log(results);
-                console.log(fields);
-            }
-        );
     } catch(err: any) {
         console.error(err.message);
     }
