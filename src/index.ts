@@ -41,7 +41,6 @@ const pool = mysql.createPool(process.env.DATABASE_URL);
 //db.connect();
 
 app.get("/", (req: any, res: any) => {
-    console.log(req.body);
     res.send({"nerd": "lmao"});
 });
 
@@ -59,6 +58,7 @@ app.get("/info/commit/:commit", (req: any, res: any) => {
 // get the current state of the repository
 // commit # and latest revision of each path
 app.get("/info/project", async(req: any, res: any) => {
+    console.log("GET @ /info/project");
     try {
         let output: ProjectState = {
             commit: 0,
@@ -91,6 +91,7 @@ app.get("/info/project", async(req: any, res: any) => {
 
 // get all revisions of a file
 app.get("/info/file/:path", (req: any, res: any) => {
+    console.log("GET @ /info/file/:path");
     try {
         const param: string = req.params.path;
         const path = param.replaceAll("|", "\\");
@@ -110,6 +111,7 @@ app.get("/info/file/:path", (req: any, res: any) => {
 
 // get latest revision of each file
 app.get("/info/repo", (req: any, res: any) => {
+    console.log("GET @ /info/repo");
     pool.execute(
         'SELECT * FROM file',
         function(err: any, results: any, fields: any) {
@@ -122,12 +124,14 @@ app.get("/info/repo", (req: any, res: any) => {
 
 // download a file by its s3 key
 app.get("/download/s3/:key", (req: any, res: any) => {
+    console.log("GET @ /download/s3/:key");
     const key: string = req.params.key;
     res.send("lmao");
 });
 
 // download a file's latest revision by path
 app.get("/download/file/:path", async(req: any, res: any) => {
+    console.log("GET @ /download/file/:path");
     const param: string = req.params.path;
     const path = param.replaceAll("|", "\\");
 
@@ -149,7 +153,6 @@ app.get("/download/file/:path", async(req: any, res: any) => {
 
 app.post("/ingest", upload.single("key"), (req: any, res: any) => {
     console.log("POST @ /ingest");
-    console.log(req.body);
     try {
         const body = req.body;
         const path = body["path"];
