@@ -20,10 +20,14 @@ const s3 = new S3Client({
 })
 
 const upload = multer({
+    limits: {
+        fileSize: 100 * 1024 * 1024
+    },
     storage: multerS3({
         s3: s3,
         bucket: "glassy-pdm",
         ACL: "public-read", // anyone w/ link can read
+        //limits: { fileSize: 50 * 1000 * 1000},
         metadata: function(req: any, file: any, cb: any) {
             cb(null, { fieldName: file.fieldname })
         },
