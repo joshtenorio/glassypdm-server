@@ -19,6 +19,15 @@ const s3 = new S3Client({
     }
 })
 
+const fileSizeLimitErrorHandler = (err: any, req: any, res: any, next: any) => {
+    if (err) {
+        console.log("too big!");
+      res.send(413);
+    } else {
+      next();
+    }
+  }
+
 const upload = multer({
     limits: {
         fileSize: 100 * 1024 * 1024
@@ -155,7 +164,7 @@ app.get("/download/file/:path", async(req: any, res: any) => {
     res.send({"s3Url": url});
 });
 
-app.post("/ingest", upload.single("key"), (req: any, res: any) => {
+app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, res: any) => {
     console.log("POST @ /ingest");
     try {
         const body = req.body;
