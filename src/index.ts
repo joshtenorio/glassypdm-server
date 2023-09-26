@@ -150,8 +150,10 @@ app.get("/download/file/:path", async(req: any, res: any) => {
 
     // get s3 key by path, with latest revision
     const [rows, fields] = await pool.execute(
-        "SELECT s3key FROM file WHERE path = ? GROUP BY id ", [path]
-    )
+        "SELECT s3key FROM file WHERE path = ? AND id = (SELECT MAX(id) FROM file WHERE path = ?);",
+        [path, path]
+    );
+    console.log(rows);
     const key: string = rows[0]["s3key"].toString();
     if (key) {
         console.log(key);
