@@ -180,11 +180,12 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
         const commit = body["commit"];
         const size = body["size"];
         const hash = body["hash"];
+        const project = body["project"];
         if(req.file) {
             const s3key = req.file.key;
             pool.execute(
-                'INSERT INTO file(path, commit, size, hash, s3key) VALUES (?, ?, ?, ?, ?)',
-                [path, commit, size, hash, s3key],
+                'INSERT INTO file(path, commit, size, hash, s3key, project) VALUES (?, ?, ?, ?, ?, ?)',
+                [path, commit, size, hash, s3key, project],
                 function(err: any, results: any, fields: any) {
                     console.log(results);
                     console.log(fields);
@@ -193,8 +194,8 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
         }
         else {
             pool.execute(
-                'INSERT INTO file(path, commit, size, hash) VALUES (?, ?, ?, ?)',
-                [path, commit, size, hash],
+                'INSERT INTO file(path, commit, size, hash, project) VALUES (?, ?, ?, ?, ?)',
+                [path, commit, size, hash, project],
                 function(err: any, results: any, fields: any) {
                     console.log(results);
                     console.log(fields);
