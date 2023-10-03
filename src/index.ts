@@ -30,7 +30,7 @@ const fileSizeLimitErrorHandler = (err: any, req: any, res: any, next: any) => {
 
 const upload = multer({
     limits: {
-        fileSize: 100 * 1024 * 1024
+        fileSize: 900 * 1024 * 1024
     },
     storage: multerS3({
         s3: s3,
@@ -79,13 +79,13 @@ app.get("/info/project", async(req: any, res: any) => {
         };
         // get latest commit #
         let [rows, fields] = await pool.execute(
-            "SELECT MAX(commit) as latest FROM file", []
+            "SELECT MAX(commitid) as latest FROM file", []
         );
         output.commit = rows[0]["latest"];
 
         // get files
         [rows, fields] = await pool.execute(
-            "SELECT a.path, a.commit, a.size, a.hash FROM file a \
+            "SELECT a.path, a.commitid, a.size, a.hash FROM file a \
             INNER JOIN ( \
                 SELECT path, MAX(id) id \
                 FROM file \
@@ -172,6 +172,13 @@ app.get("/download/file/:path", async(req: any, res: any) => {
 
 });
 
+app.post("/commit", (req: any, res: any) => {
+    console.log("POST @ /commit");
+    // check if commit already exists
+    // if it does, return some sort of error
+    // otherwise proceed normally
+});
+
 app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, res: any) => {
     console.log("POST @ /ingest");
     try {
@@ -184,7 +191,7 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
         if(req.file) {
             const s3key = req.file.key;
             pool.execute(
-                'INSERT INTO file(path, commit, size, hash, s3key, project) VALUES (?, ?, ?, ?, ?, ?)',
+                'INSERT INTO file(path, commitid, size, hash, s3key, projectid) VALUES (?, ?, ?, ?, ?, ?)',
                 [path, commit, size, hash, s3key, project],
                 function(err: any, results: any, fields: any) {
                     console.log(results);
@@ -194,7 +201,7 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
         }
         else {
             pool.execute(
-                'INSERT INTO file(path, commit, size, hash, project) VALUES (?, ?, ?, ?, ?)',
+                'INSERT INTO file(path, commitid, size, hash, projectid) VALUES (?, ?, ?, ?, ?)',
                 [path, commit, size, hash, project],
                 function(err: any, results: any, fields: any) {
                     console.log(results);
