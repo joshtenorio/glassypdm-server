@@ -209,7 +209,7 @@ app.post("/commit", async(req: any, res: any) => {
         const authorID = body["authorID"];
         const message = body["message"];
         const fileCount = body["fileCount"];
-        const timestamp = Date.now();
+        const timestamp = Date.now().toString();
         const [rows, fields] = await pool.execute(
             "SELECT * FROM commit WHERE id = ?;",
             [commitID]
