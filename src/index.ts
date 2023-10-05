@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-//import clerk from "@clerk/clerk-sdk-node";
+import clerk from "@clerk/clerk-sdk-node";
 import { config } from "dotenv";
 import { CADFile, ProjectState } from "./types";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
@@ -74,6 +74,11 @@ app.get("/info/commit/recent", async(req: any, res: any) => {
         let [rows, fields] = await pool.execute(
             "SELECT * FROM commit ORDER BY id DESC LIMIT 3;", []
         );
+        
+        for(let i = 0; i < rows.length; i++) {
+            let user = await clerk.users.getUser(rows[i]["authorid"]);
+            rows[i].authorID = user.firstName + " " + user.lastName;
+        }
         res.send(rows);
         return;
     } catch(err: any) {
