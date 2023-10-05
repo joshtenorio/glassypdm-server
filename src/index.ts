@@ -65,6 +65,23 @@ app.get("/info/commit/latest", (req: any, res: any) => {
     res.send("test");
 });
 
+// get most recent 3 commits
+// TODO generalize to recent n commits
+// TODO get files as well
+app.get("/info/commit/recent", async(req: any, res: any) => {
+    console.log("GET @ /info/commit/recent")
+    try {
+        let [rows, fields] = await pool.execute(
+            "SELECT * FROM commit ORDER BY id DESC LIMIT 3;", []
+        );
+        res.send(rows);
+        return;
+    } catch(err: any) {
+        console.error(err);
+    }
+    res.send("lol");
+});
+
 // get a specific commit by id
 app.get("/info/commit/:commit", (req: any, res: any) => {
     res.send("test");
@@ -187,6 +204,7 @@ app.post("/commit", async(req: any, res: any) => {
         const authorID = body["authorID"];
         const message = body["message"];
         const fileCount = body["fileCount"];
+        const timestamp = Date.now();
         const [rows, fields] = await pool.execute(
             "SELECT * FROM commit WHERE id = ?;",
             [commitID]
@@ -200,8 +218,8 @@ app.post("/commit", async(req: any, res: any) => {
 
         // at this point; we can create a commit
         pool.execute(
-            'INSERT INTO commit(id, projectid, authorid, message, filecount) VALUES (?, ?, ?, ?, ?)',
-            [commitID, projectID, authorID, message, fileCount],
+            'INSERT INTO commit(id, projectid, authorid, message, filecount, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+            [commitID, projectID, authorID, message, fileCount, timestamp],
             function(err: any, results: any, fields: any) {
                 console.log(results);
                 console.log(fields);
