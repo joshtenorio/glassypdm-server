@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+//import clerk from "@clerk/clerk-sdk-node";
 import { config } from "dotenv";
 import { CADFile, ProjectState } from "./types";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
@@ -48,6 +49,7 @@ const upload = multer({
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 
 const pool = mysql.createPool(process.env.DATABASE_URL);
 
@@ -172,11 +174,43 @@ app.get("/download/file/:path", async(req: any, res: any) => {
 
 });
 
-app.post("/commit", (req: any, res: any) => {
+app.post("/commit", async(req: any, res: any) => {
     console.log("POST @ /commit");
     // check if commit already exists
     // if it does, return some sort of error
     // otherwise proceed normally
+    try {
+        const body = req.body;
+        console.log(req.body)
+        const commitID = body["commitid"];
+        const projectID = body["projectID"];
+        const authorID = body["authorID"];
+        const message = body["message"];
+        const fileCount = body["fileCount"];
+        const [rows, fields] = await pool.execute(
+            "SELECT * FROM commit WHERE id = ?;",
+            [commitID]
+        );
+        console.log(rows[0]);
+        if(rows[0]) {
+            // commit already exists so return an error
+            res.send({"isCommitFree": false});
+            return;
+        }
+
+        // at this point; we can create a commit
+        pool.execute(
+            'INSERT INTO commit(id, projectid, authorid, message, filecount) VALUES (?, ?, ?, ?, ?)',
+            [commitID, projectID, authorID, message, fileCount],
+            function(err: any, results: any, fields: any) {
+                console.log(results);
+                console.log(fields);
+            }
+        );
+        res.send({"isCommitFree": true});
+    } catch(err: any) {
+        console.error(err.message);
+    }
 });
 
 app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, res: any) => {

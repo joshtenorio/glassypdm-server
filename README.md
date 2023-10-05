@@ -1,4 +1,6 @@
 # glassyPDM Server
+## todo
+- [ ] protected routes, lol
 ## Dev Instructions
 ```bash
 # to run locally
