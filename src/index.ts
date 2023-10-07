@@ -207,7 +207,9 @@ app.post("/commit", async(req: any, res: any) => {
         const commitID = body["commitid"];
         const projectID = body["projectID"];
         const authorID = body["authorID"];
-        const message = body["message"];
+        let message: string = body["message"];
+        // limit the message so it fits in database
+        message = message.substring(0, 500); 
         const fileCount = body["fileCount"];
         const timestamp = Date.now().toString();
         const [rows, fields] = await pool.execute(
