@@ -56,7 +56,7 @@ const pool = mysql.createPool(process.env.DATABASE_URL);
 //db.connect();
 
 app.get("/", (req: any, res: any) => {
-    res.send({"nerd": "lmao"});
+    res.send({"nerd": "lol 231006"});
 });
 
 // get files changed in latest commit
