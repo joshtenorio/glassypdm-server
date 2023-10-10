@@ -56,7 +56,7 @@ const pool = mysql.createPool(process.env.DATABASE_URL);
 //db.connect();
 
 app.get("/", (req: any, res: any) => {
-    res.send({"nerd": "lol 231006"});
+    res.send({"nerd": "lol 231009"});
 });
 
 // get files changed in latest commit
@@ -160,10 +160,24 @@ app.get("/info/repo", (req: any, res: any) => {
 });
 
 // download a file by its s3 key
-app.get("/download/s3/:key", (req: any, res: any) => {
+app.get("/download/s3/:key", async(req: any, res: any) => {
     console.log("GET @ /download/s3/:key");
     const key: string = req.params.key;
-    res.send("lmao");
+    console.log(key)
+    if (key) {
+        console.log(key);
+        const command = new GetObjectCommand({
+            Bucket: "glassy-pdm",
+            Key: key,
+        });
+        // presigned url, expires in 10 minutes
+        const url = await getSignedUrl(s3, command, {expiresIn: 600} );
+        console.log(url);
+        res.send({
+            "s3Url": url,
+            "key": key
+        });
+    }
 });
 
 // download a file's latest revision by path
@@ -178,6 +192,13 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         [path, path]
     );
     console.log(rows);
+    if(rows.length == 0) {
+        res.send({
+            "s3Url": "dne",
+            "key": "dne"
+        });
+        return;
+    }
     const key: string = rows[0]["s3key"].toString();
     if (key) {
         console.log(key);
@@ -194,6 +215,7 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         });
     }
     else {
+        // TODO ????
         res.send({
             "s3Url": "delete",
             "key": "lol"
