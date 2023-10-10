@@ -1,16 +1,18 @@
+import { config } from "dotenv";
+
+config();
+
 import express from "express";
 import cors from "cors";
 import clerk from "@clerk/clerk-sdk-node";
-import { config } from "dotenv";
 import { CADFile, ProjectState } from "./types";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import {getSignedUrl, S3RequestPresigner} from "@aws-sdk/s3-request-presigner";
+import { getPermissionLevel, pool } from "./db";
 const multer = require("multer");
-const mysql = require("mysql2/promise");
 const multerS3 = require("multer-s3");
 const { S3Client } = require("@aws-sdk/client-s3");
 
-config();
 
 const s3 = new S3Client({
     region: process.env.S3_REGION,
@@ -51,7 +53,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const pool = mysql.createPool(process.env.DATABASE_URL);
 
 //db.connect();
 
@@ -114,6 +115,17 @@ app.get("/info/permissions/:email", async(req: any, res: any) => {
             [id]
         );
         console.log(rows);
+        if(rows.length === 0) {
+            await pool.execute(
+                "INSERT INTO permission(userid, projectid, level) VALUES (?, 0, 0)",
+                [id]
+            );
+            res.send({
+                "result": true,
+                "level": 0
+            });
+            return;
+        }
         
         res.send({
             "result": true,
@@ -129,8 +141,48 @@ app.get("/info/permissions/:email", async(req: any, res: any) => {
 })
 
 app.post("/permissions", async(req: any, res: any) => {
+    try {
+        const body = req.body;
+        const setterID = body["setterID"];
+        const userEmail = body["userEmail"];
+        const projectID = body["projectID"];
+        const permissionLevel = body["permissionLevel"];
+        const users = await clerk.users.getUserList({
+            emailAddress: [userEmail]
+        });
+        if(users.length === 0) {
+            console.log("no users found");
+            res.send({
+                "result": "user dne"
+            });
+            return;
+        }
+        const userID = users[0]["id"];
+
+        // get the permission level of the setter
+        let setterLevel: number = await getPermissionLevel(setterID, projectID);
+        if (setterLevel < 2 || permissionLevel > setterLevel) {
+            res.send({
+                "result": "no permission"
+            });
+            return;
+        }
+
+        // set the permission level
+        try {
+            await pool.execute(
+                "INSERT INTO permission(userid, projectid, level) VALUES (?, ?, ?)",
+                [userID, projectID, permissionLevel]
+            );
+        } catch(e: any) {
+            console.error(e.message);
+        }
+
+    } catch(e: any) {
+        console.error(e.message);
+    }
     res.send({
-        "ok": "yes"
+        "result": "success"
     });
 })
 
