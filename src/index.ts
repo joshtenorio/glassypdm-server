@@ -92,6 +92,48 @@ app.get("/info/commit/:commit", (req: any, res: any) => {
     res.send("test");
 });
 
+// get a user's permission by their email
+// TODO project id ??
+app.get("/info/permissions/:email", async(req: any, res: any) => {
+    const email = req.params.email
+    const users = await clerk.users.getUserList({
+        emailAddress: [email]
+    })
+    if(users.length === 0) {
+        console.log("no users found");
+        res.send({
+            "result": false
+        });
+        return;
+    }
+    const id: string = users[0]["id"];
+    console.log(id)
+    try {
+        const [rows, fields] = await pool.execute(
+            "SELECT * FROM permission WHERE userid = ? ORDER BY id DESC LIMIT 1;",
+            [id]
+        );
+        console.log(rows);
+        
+        res.send({
+            "result": true,
+            "level": rows[0]["level"]
+        });
+        return;
+    } catch(err: any) {
+        console.error(err.message);
+    }
+    res.send({
+        "result": false,
+    });
+})
+
+app.post("/permissions", async(req: any, res: any) => {
+    res.send({
+        "ok": "yes"
+    });
+})
+
 // get the current state of the repository
 // commit # and latest revision of each path
 app.get("/info/project", async(req: any, res: any) => {
