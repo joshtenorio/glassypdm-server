@@ -60,6 +60,12 @@ app.get("/", (req: any, res: any) => {
     res.send({"nerd": "lol 231009"});
 });
 
+app.get("/version", (req: any, res: any) => {
+    res.send({
+        "version": "0.2.0"
+    });
+});
+
 // get files changed in latest commit
 app.get("/info/commit/latest", (req: any, res: any) => {
     console.log("GET @ /info/latest");
