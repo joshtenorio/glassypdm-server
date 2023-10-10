@@ -385,6 +385,10 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
                     console.log(fields);
                 }
             );
+            res.send({
+                "result": true,
+                "s3key": req.file.key
+            });
         }
         else {
             pool.execute(
@@ -400,7 +404,7 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
     } catch(err: any) {
         console.error(err.message);
     }
-    res.send("bro");
+    res.send({ "result": false });
 });
 
 app.listen(process.env.PORT || 5000, () => {
