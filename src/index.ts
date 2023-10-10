@@ -65,14 +65,14 @@ app.get("/info/commit/latest", (req: any, res: any) => {
     res.send("test");
 });
 
-// get most recent 3 commits
+// get most recent 5 commits
 // TODO generalize to recent n commits
 // TODO get files as well
 app.get("/info/commit/recent", async(req: any, res: any) => {
     console.log("GET @ /info/commit/recent")
     try {
         let [rows, fields] = await pool.execute(
-            "SELECT * FROM commit ORDER BY id DESC LIMIT 3;", []
+            "SELECT * FROM commit ORDER BY id DESC LIMIT 5;", []
         );
         
         for(let i = 0; i < rows.length; i++) {
@@ -188,10 +188,16 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         // presigned url, expires in 10 minutes
         const url = await getSignedUrl(s3, command, {expiresIn: 600} );
         console.log(url);
-        res.send({"s3Url": url});
+        res.send({
+            "s3Url": url,
+            "key": key
+        });
     }
     else {
-        res.send({"s3Url": "delete"});
+        res.send({
+            "s3Url": "delete",
+            "key": "lol"
+        });
     }
 
 });
