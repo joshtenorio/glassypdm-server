@@ -167,7 +167,7 @@ app.post("/permissions", async(req: any, res: any) => {
 
         // get the permission level of the setter
         let setterLevel: number = await getPermissionLevel(setterID, projectID);
-        if (setterLevel < 2 || permissionLevel > setterLevel) {
+        if (setterLevel < 2 || (permissionLevel >= setterLevel && setterLevel != 3)) {
             res.send({
                 "result": "no permission"
             });
