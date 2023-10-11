@@ -389,6 +389,7 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
                 "result": true,
                 "s3key": req.file.key
             });
+            return;
         }
         else {
             pool.execute(
@@ -399,12 +400,17 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
                     console.log(fields);
                 }
             );
+            res.send({
+                "result": true,
+                "s3key": "deleted"
+            });
+            return;
         }
 
     } catch(err: any) {
         console.error(err.message);
     }
-    res.send({ "result": false });
+    res.send({ "result": false, "s3key": "oops" });
 });
 
 app.listen(process.env.PORT || 5000, () => {
