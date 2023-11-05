@@ -471,6 +471,3 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
 let server = app.listen(process.env.PORT || 5000, () => {
     console.log("listening on port ", process.env.PORT || 5000);
 });
-
-// timeout of 10 minutes
-server.timeout = 600000
