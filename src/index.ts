@@ -311,8 +311,6 @@ app.post("/download/files", async(req: any, res: any) => {
             };
             const key: any = rows[0]["s3key"];
             if (key) {
-                
-                console.log(key);
                 const command = new GetObjectCommand({
                     Bucket: "glassy-pdm",
                     Key: key.toString(),
