@@ -288,6 +288,7 @@ app.post("/download/files", async(req: any, res: any) => {
         const fileList = req.body["files"];
         const urlList: DownloadInfo[] = [];
         for(let i = 0; i < fileList.length; i++) {
+            console.log(`${i} of ${fileList.length} retrieved...`);
             const path: string = (fileList[i] as string);
 
             const [rows, fields] = await pool.execute(
