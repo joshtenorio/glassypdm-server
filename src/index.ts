@@ -5,7 +5,7 @@ config();
 import express from "express";
 import cors from "cors";
 import clerk from "@clerk/clerk-sdk-node";
-import { CADFile, ProjectState } from "./types";
+import { CADFile, DownloadInfo, ProjectState } from "./types";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import {getSignedUrl, S3RequestPresigner} from "@aws-sdk/s3-request-presigner";
 import { getPermissionLevel, pool } from "./db";
@@ -57,7 +57,7 @@ app.use(express.json());
 //db.connect();
 
 app.get("/", (req: any, res: any) => {
-    res.send({"nerd": "lol 231009"});
+    res.send({"hmm": "lol"});
 });
 
 app.get("/version", (req: any, res: any) => {
@@ -139,7 +139,7 @@ app.get("/info/permissions/:email", async(req: any, res: any) => {
         });
         return;
     } catch(err: any) {
-        console.error(err.message);
+        console.error(err);
     }
     res.send({
         "result": false,
@@ -271,8 +271,8 @@ app.get("/download/s3/:key", async(req: any, res: any) => {
             Bucket: "glassy-pdm",
             Key: key,
         });
-        // presigned url, expires in 10 minutes
-        const url = await getSignedUrl(s3, command, {expiresIn: 600} );
+        // presigned url, expires in 60 minutes
+        const url = await getSignedUrl(s3, command, {expiresIn: 3600} );
         console.log(url);
         res.send({
             "s3Url": url,
@@ -281,7 +281,63 @@ app.get("/download/s3/:key", async(req: any, res: any) => {
     }
 });
 
-// download a file's latest revision by path
+// return list of presigned s3 URLs
+app.post("/download/files", async(req: any, res: any) => {
+    console.log("POST @ /download/files");
+    try {
+        const fileList = req.body["files"];
+        const urlList: DownloadInfo[] = [];
+        for(let i = 0; i < fileList.length; i++) {
+            const path: string = (fileList[i] as string);
+
+            const [rows, fields] = await pool.execute(
+                "SELECT s3key FROM file WHERE path = ? AND id = (SELECT MAX(id) FROM file WHERE path = ?);",
+                [path, path]
+            );
+
+            // file not found
+            if (rows.length == 0) {
+                urlList.push({
+                    path: fileList[i],
+                    url: "dne",
+                    key: "dne"
+                });
+                continue;
+            }
+            let output: DownloadInfo = {
+                path: fileList[i],
+                url: "delete",
+                key: "lol"
+            };
+            const key: any = rows[0]["s3key"];
+            if (key) {
+                
+                console.log(key);
+                const command = new GetObjectCommand({
+                    Bucket: "glassy-pdm",
+                    Key: key.toString(),
+                });
+                // presigned url, expires in 120 minutes
+                const url = await getSignedUrl(s3, command, {expiresIn: 7200} );
+                output.key = key.toString();
+                output.url = url;
+            }
+            else {
+                // TODO ????
+            }
+
+            urlList.push(output);
+        }
+
+        res.send({
+            "urlList": urlList
+        });
+    } catch(err: any) {
+        console.log(err);
+    }
+});
+
+// download a file's latest revision by path. i.e. it returns presigned s3 URLs
 app.get("/download/file/:path", async(req: any, res: any) => {
     console.log("GET @ /download/file/:path");
     const param: string = req.params.path;
@@ -292,7 +348,6 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         "SELECT s3key FROM file WHERE path = ? AND id = (SELECT MAX(id) FROM file WHERE path = ?);",
         [path, path]
     );
-    console.log(rows);
     if(rows.length == 0) {
         res.send({
             "s3Url": "dne",
@@ -300,19 +355,19 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         });
         return;
     }
-    const key: string = rows[0]["s3key"].toString();
+    const key: any = rows[0]["s3key"];
     if (key) {
         console.log(key);
         const command = new GetObjectCommand({
             Bucket: "glassy-pdm",
-            Key: key,
+            Key: key.toString(),
         });
-        // presigned url, expires in 10 minutes
-        const url = await getSignedUrl(s3, command, {expiresIn: 600} );
+        // presigned url, expires in 60 minutes
+        const url = await getSignedUrl(s3, command, {expiresIn: 3600} );
         console.log(url);
         res.send({
             "s3Url": url,
-            "key": key
+            "key": key.toString()
         });
     }
     else {
@@ -363,7 +418,7 @@ app.post("/commit", async(req: any, res: any) => {
         );
         res.send({"isCommitFree": true});
     } catch(err: any) {
-        console.error(err.message);
+        console.error(err);
     }
 });
 
@@ -409,7 +464,7 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
         }
 
     } catch(err: any) {
-        console.error(err.message);
+        console.error(err);
     }
     res.send({ "result": false, "s3key": "oops" });
 });

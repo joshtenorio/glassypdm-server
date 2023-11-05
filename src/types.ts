@@ -9,3 +9,9 @@ export interface ProjectState {
     commit: number,
     files: CADFile[]
 };
+
+export interface DownloadInfo {
+    path: string, // path to download to
+    url: string, // presigned url
+    key: string // s3 key
+}
