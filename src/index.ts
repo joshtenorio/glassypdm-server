@@ -283,6 +283,7 @@ app.get("/download/s3/:key", async(req: any, res: any) => {
 
 // return list of presigned s3 URLs
 app.post("/download/files", async(req: any, res: any) => {
+    req.setTimeout(900000); // 900 second long timeout (20 min)
     console.log("POST @ /download/files");
     try {
         const fileList = req.body["files"];
