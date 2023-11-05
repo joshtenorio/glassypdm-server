@@ -62,7 +62,7 @@ app.get("/", (req: any, res: any) => {
 
 app.get("/version", (req: any, res: any) => {
     res.send({
-        "version": "0.3.0"
+        "version": "0.4.0"
     });
 });
 
@@ -362,8 +362,8 @@ app.get("/download/file/:path", async(req: any, res: any) => {
             Bucket: "glassy-pdm",
             Key: key.toString(),
         });
-        // presigned url, expires in 60 minutes
-        const url = await getSignedUrl(s3, command, {expiresIn: 3600} );
+        // presigned url, expires in 10 minutes
+        const url = await getSignedUrl(s3, command, {expiresIn: 600} );
         console.log(url);
         res.send({
             "s3Url": url,
