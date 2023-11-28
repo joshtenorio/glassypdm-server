@@ -95,8 +95,31 @@ app.get("/info/commit/recent", async(req: any, res: any) => {
 });
 
 // get a specific commit by id
-app.get("/info/commit/:commit", (req: any, res: any) => {
-    res.send("test");
+app.get("/info/commit/:commit", async(req: any, res: any) => {
+    const commitid = req.params.commit;
+    try {
+        const [rows, fields] = await pool.execute(
+            "SELECT * FROM commit WHERE id = ?;", [commitid]
+        );
+
+        let user = await clerk.users.getUser(rows[0]["authorid"]);
+        let author = user.firstName + " " + user.lastName;
+
+        const [files, fileFields] = await pool.execute(
+            "SELECT * FROM file WHERE commitid = ?;", [commitid]
+        );
+        let output = {
+            author: author,
+            id: rows[0].id,
+            message: rows[0].message,
+            timestamp: rows[0].timestamp,
+            count: files.length,
+            files: files
+        }
+        res.json(output);
+    } catch(err: any) {
+        console.error(err);
+    }
 });
 
 // get a user's permission by their email
@@ -431,11 +454,12 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
         const size = body["size"];
         const hash = body["hash"];
         const project = body["project"];
+        const changeType = body["changeType"];
         if(req.file) {
             const s3key = req.file.key;
             pool.execute(
-                'INSERT INTO file(path, commitid, size, hash, s3key, projectid) VALUES (?, ?, ?, ?, ?, ?)',
-                [path, commit, size, hash, s3key, project],
+                'INSERT INTO file(path, commitid, size, hash, s3key, projectid, changetype) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [path, commit, size, hash, s3key, project, changeType],
                 function(err: any, results: any, fields: any) {
                     console.log(results);
                     console.log(fields);
