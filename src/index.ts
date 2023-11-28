@@ -289,18 +289,31 @@ app.get("/download/s3/:key", async(req: any, res: any) => {
     const key: string = req.params.key;
     console.log(key)
     if (key) {
-        console.log(key);
-        const command = new GetObjectCommand({
-            Bucket: "glassy-pdm",
-            Key: key,
-        });
-        // presigned url, expires in 60 minutes
-        const url = await getSignedUrl(s3, command, {expiresIn: 3600} );
-        console.log(url);
-        res.send({
-            "s3Url": url,
-            "key": key
-        });
+        // get filename by key
+        try {
+            const [rows, fields] = await pool.execute(
+                "SELECT path FROM file WHERE s3key = ?", [key]
+            );
+            console.log(rows[0].path)
+            const filename = rows[0].path.split("\\")[rows[0].path.split("\\").length - 1];
+
+            console.log(key);
+            const command = new GetObjectCommand({
+                Bucket: "glassy-pdm",
+                Key: key,
+                ResponseContentDisposition: "attachment;filename=" + filename
+            });
+            // presigned url, expires in 60 minutes
+            const url = await getSignedUrl(s3, command, {expiresIn: 3600} );
+            console.log(url);
+            res.send({
+                "s3Url": url,
+                "key": key
+            });
+        } catch(err: any) {
+            console.error(err);
+        }
+
     }
 });
 
