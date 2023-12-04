@@ -406,9 +406,11 @@ app.post("/commit", async(req: any, res: any) => {
             }
         );
         res.send({"isCommitFree": true});
+        return;
     } catch(err: any) {
         console.error(err);
     }
+    res.send({"isCommitFree": false});
 });
 
 app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, res: any) => {
