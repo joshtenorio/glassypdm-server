@@ -325,61 +325,6 @@ app.get("/download/s3/:key", async(req: any, res: any) => {
     }
 });
 
-// return list of presigned s3 URLs
-app.post("/download/files", async(req: any, res: any) => {
-    req.setTimeout(900000); // 900 second long timeout (20 min)
-    console.log("POST @ /download/files");
-    try {
-        const fileList = req.body["files"];
-        const urlList: DownloadInfo[] = [];
-        for(let i = 0; i < fileList.length; i++) {
-            console.log(`${i} of ${fileList.length} retrieved...`);
-            const path: string = (fileList[i] as string);
-
-            const [rows, fields] = await pool.execute(
-                "SELECT s3key FROM file WHERE path = ? AND id = (SELECT MAX(id) FROM file WHERE path = ?);",
-                [path, path]
-            );
-
-            // file not found
-            if (rows.length == 0) {
-                urlList.push({
-                    path: fileList[i],
-                    url: "dne",
-                    key: "dne"
-                });
-                continue;
-            }
-            let output: DownloadInfo = {
-                path: fileList[i],
-                url: "delete",
-                key: "lol"
-            };
-            const key: any = rows[0]["s3key"];
-            if (key) {
-                const command = new GetObjectCommand({
-                    Bucket: "glassy-pdm",
-                    Key: key.toString(),
-                });
-                // presigned url, expires in 120 minutes
-                const url = await getSignedUrl(s3, command, {expiresIn: 7200} );
-                output.key = key.toString();
-                output.url = url;
-            }
-            else {
-                // TODO ????
-            }
-
-            urlList.push(output);
-        }
-
-        res.send({
-            "urlList": urlList
-        });
-    } catch(err: any) {
-        console.log(err);
-    }
-});
 
 // download a file's latest revision by path. i.e. it returns presigned s3 URLs
 app.get("/download/file/:path", async(req: any, res: any) => {
