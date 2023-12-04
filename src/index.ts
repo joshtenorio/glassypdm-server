@@ -55,14 +55,22 @@ app.use(express.json());
 
 
 //db.connect();
+let fails = 0;
+let CLIENT_VERSION = "0.4.0";
 
 app.get("/", (req: any, res: any) => {
-    res.send({"hmm": "lol"});
+    res.send(
+    {
+        "hmm": "lol",
+        "failures": fails,
+        "version": CLIENT_VERSION
+    }
+    );
 });
 
 app.get("/version", (req: any, res: any) => {
     res.send({
-        "version": "0.4.0"
+        "version": CLIENT_VERSION
     });
 });
 
@@ -507,6 +515,7 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
     } catch(err: any) {
         console.error(err);
     }
+    fails += 1;
     res.send({ "result": false, "s3key": "oops" });
 });
 
