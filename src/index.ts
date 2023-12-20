@@ -75,6 +75,7 @@ app.get("/version", (req: any, res: any) => {
 });
 
 // get files changed in latest commit
+// TODO
 app.get("/info/commit/latest", (req: any, res: any) => {
     console.log("GET @ /info/latest");
     res.send("test");
@@ -439,7 +440,8 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
             );
             res.send({
                 "result": true,
-                "s3key": req.file.key
+                "s3key": req.file.key,
+                "path": path
             });
             return;
         }
@@ -454,7 +456,8 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
             );
             res.send({
                 "result": true,
-                "s3key": "deleted"
+                "s3key": "deleted",
+                "path": path
             });
             return;
         }
