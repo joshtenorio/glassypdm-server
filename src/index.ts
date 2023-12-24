@@ -341,7 +341,8 @@ app.get("/download/file/:path", async(req: any, res: any) => {
     if(rows.length == 0) {
         res.send({
             "s3Url": "dne",
-            "key": "dne"
+            "key": "dne",
+            "relPath": param
         });
         return;
     }
@@ -357,14 +358,16 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         console.log(url);
         res.send({
             "s3Url": url,
-            "key": key.toString()
+            "key": key.toString(),
+            "relPath": param
         });
     }
     else {
         // TODO ????
         res.send({
             "s3Url": "delete",
-            "key": "lol"
+            "key": "lol",
+            "relPath": param
         });
     }
 
