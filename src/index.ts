@@ -342,7 +342,7 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         res.send({
             "s3Url": "dne",
             "key": "dne",
-            "relPath": req.params.path
+            "relPath": path
         });
         return;
     }
@@ -359,7 +359,7 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         res.send({
             "s3Url": url,
             "key": key.toString(),
-            "relPath": req.params.path
+            "relPath": path
         });
     }
     else {
@@ -367,7 +367,7 @@ app.get("/download/file/:path", async(req: any, res: any) => {
         res.send({
             "s3Url": "delete",
             "key": "lol",
-            "relPath": req.params.path
+            "relPath": path
         });
     }
 
