@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model commit {
+  id        Int     @id
+  projectid Int
+  authorid  String  @db.VarChar(255)
+  message   String? @db.VarChar(512)
+  filecount Int
+  timestamp String  @db.VarChar(255)
+}
+
+model file {
+  id         Int     @id @default(autoincrement())
+  path       String  @db.VarChar(2048)
+  commitid   Int
+  size       Int
+  hash       String  @db.VarChar(512)
+  s3key      String? @db.VarChar(512)
+  projectid  Int     @default(0)
+  changetype Int?    @default(3)
+}
+
+model permission {
+  id        Int    @id @default(autoincrement())
+  userid    String @db.VarChar(255)
+  projectid Int
+  level     Int
+}
+
+model project {
+  id         Int    @id
+  name       String @db.VarChar(255)
+  initcommit Int?
+}
