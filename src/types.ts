@@ -3,6 +3,7 @@ export interface CADFile {
     commit: number,
     size: number,
     hash: string,
+    s3key: string
 };
   
 export interface ProjectState {

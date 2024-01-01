@@ -242,7 +242,7 @@ app.get("/info/project", async(req: any, res: any) => {
 
         // get files
         [rows, fields] = await pool.execute(
-            "SELECT a.path, a.commitid, a.size, a.hash FROM file a \
+            "SELECT a.path, a.commitid, a.size, a.hash, a.s3key FROM file a \
             INNER JOIN ( \
                 SELECT path, MAX(id) id \
                 FROM file \
