@@ -6,11 +6,14 @@ import { InfoController } from './info/info.controller';
 import { InfoModule } from './info/info.module';
 import { InfoService } from './info/info.service';
 import { PrismaService } from './prisma.service';
+import { CommitModule } from './commit/commit.module';
+import { ClerkService } from './clerk/clerk.service';
+import { ClerkModule } from './clerk/clerk.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true
-  }), InfoModule],
+  }), InfoModule, CommitModule, ClerkModule],
   controllers: [AppController, InfoController],
   providers: [AppService, InfoService, PrismaService],
 })

@@ -10,9 +10,4 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  // TODO type the thing lol
-  @Get("version")
-  getVersion(): any {
-    return { "version": "0.4.0" };
-  }
 }

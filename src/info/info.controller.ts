@@ -10,8 +10,12 @@ export class InfoController {
 
     @Get()
     getInfo(): string {
-        
         return "asdf";
+    }
+
+    @Get("version")
+    getVersion(): any {
+        return { version: "v0.4.0" };
     }
 
 
