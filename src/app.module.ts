@@ -7,14 +7,17 @@ import { InfoModule } from './info/info.module';
 import { InfoService } from './info/info.service';
 import { PrismaService } from './prisma.service';
 import { CommitModule } from './commit/commit.module';
-import { ClerkService } from './clerk/clerk.service';
-import { ClerkModule } from './clerk/clerk.module';
+import { UserService } from './user/user.service';
+import { UserModule } from './user/user.module';
+import { FileService } from './file/file.service';
+import { FileController } from './file/file.controller';
+import { FileModule } from './file/file.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true
-  }), InfoModule, CommitModule, ClerkModule],
-  controllers: [AppController, InfoController],
-  providers: [AppService, InfoService, PrismaService],
+  }), InfoModule, CommitModule, UserModule, FileModule],
+  controllers: [AppController, InfoController, FileController],
+  providers: [AppService, InfoService, PrismaService, FileService],
 })
 export class AppModule {}
