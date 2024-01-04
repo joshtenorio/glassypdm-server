@@ -15,4 +15,10 @@ export class FileService {
             }
         });
     }
+
+    getS3() {
+        return true;
+    }
+
+
 }

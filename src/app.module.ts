@@ -7,7 +7,6 @@ import { InfoModule } from './info/info.module';
 import { InfoService } from './info/info.service';
 import { PrismaService } from './prisma.service';
 import { CommitModule } from './commit/commit.module';
-import { UserService } from './user/user.service';
 import { UserModule } from './user/user.module';
 import { FileService } from './file/file.service';
 import { FileController } from './file/file.controller';
