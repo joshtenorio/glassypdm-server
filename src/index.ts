@@ -56,7 +56,7 @@ app.use(express.json());
 
 //db.connect();
 let fails = 0;
-let CLIENT_VERSION = "0.4.0";
+let CLIENT_VERSION = "0.5.0";
 
 app.get("/", (req: any, res: any) => {
     res.send(
