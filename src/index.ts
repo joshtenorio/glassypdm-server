@@ -8,7 +8,7 @@ import clerk from "@clerk/clerk-sdk-node";
 import { CADFile, DownloadInfo, ProjectState } from "./types";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import {getSignedUrl, S3RequestPresigner} from "@aws-sdk/s3-request-presigner";
-import { getPermissionLevel, pool } from "./db";
+import { getPermissionLevel, pool, turso } from "./db";
 const multer = require("multer");
 const multerS3 = require("multer-s3");
 const { S3Client } = require("@aws-sdk/client-s3");
@@ -87,9 +87,10 @@ app.get("/info/commit/latest", (req: any, res: any) => {
 app.get("/info/commit/recent", async(req: any, res: any) => {
     console.log("GET @ /info/commit/recent")
     try {
-        let [rows, fields] = await pool.execute(
-            "SELECT * FROM commit ORDER BY id DESC LIMIT 5;", []
+        let result = await turso.execute(
+            "SELECT * FROM `commit` ORDER BY `id` DESC LIMIT 5;"
         );
+        let rows: any = result.rows;
         
         for(let i = 0; i < rows.length; i++) {
             let user = await clerk.users.getUser(rows[i]["authorid"]);
@@ -107,16 +108,20 @@ app.get("/info/commit/recent", async(req: any, res: any) => {
 app.get("/info/commit/:commit", async(req: any, res: any) => {
     const commitid = req.params.commit;
     try {
-        const [rows, fields] = await pool.execute(
-            "SELECT * FROM commit WHERE id = ?;", [commitid]
+        const result = await turso.execute(
+            sql: "SELECT * FROM `commit` WHERE `id` = ?;",
+            args: [commitid]
         );
+        const rows = result.rows;
 
         let user = await clerk.users.getUser(rows[0]["authorid"]);
         let author = user.firstName + " " + user.lastName;
 
-        const [files, fileFields] = await pool.execute(
-            "SELECT * FROM file WHERE commitid = ?;", [commitid]
+        const results = await turso.execute(
+            sql: "SELECT * FROM `file` WHERE `commitid` = ?;",
+            args: [commitid]
         );
+        const files = results.rows;
         let output = {
             author: author,
             id: rows[0].id,
@@ -148,15 +153,16 @@ app.get("/info/permissions/:email", async(req: any, res: any) => {
     const id: string = users[0]["id"];
     console.log(id)
     try {
-        const [rows, fields] = await pool.execute(
-            "SELECT * FROM permission WHERE userid = ? ORDER BY id DESC LIMIT 1;",
-            [id]
+        const result = await turso.execute(
+            sql: "SELECT * FROM permission WHERE userid = ? ORDER BY id DESC LIMIT 1;",
+            args: [id]
         );
-        console.log(rows);
+        const rows = result;
         if(rows.length === 0) {
-            await pool.execute(
-                "INSERT INTO permission(userid, projectid, level) VALUES (?, 0, 0)",
-                [id]
+            await turso.execute(
+                sql:"INSERT INTO permission(userid, projectid, level) VALUES (?, 0, 0)",
+                args: [id],
+                "write"
             );
             res.send({
                 "result": true,

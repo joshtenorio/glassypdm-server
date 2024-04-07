@@ -1,4 +1,10 @@
 const mysql = require("mysql2/promise");
+import { createClient } from "@libsql/client";
+
+export const turso = createClient({
+    url: process.env.TURSO_URL as string,
+    authToken: process.env.TURSO_TOKEN as string,
+});
 
 export const pool = mysql.createPool(process.env.DATABASE_URL);
 
