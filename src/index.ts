@@ -404,7 +404,7 @@ app.post("/commit", async(req: any, res: any) => {
 
         // at this point; we can create a commit
         turso.execute({
-            sql: 'INSERT INTO commit(id, projectid, authorid, message, filecount, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+            sql: 'INSERT INTO `commit`(id, projectid, authorid, message, filecount, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
             args: [commitID, projectID, authorID, message, fileCount, timestamp],
         });
         res.send({"isCommitFree": true});
