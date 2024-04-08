@@ -108,19 +108,19 @@ app.get("/info/commit/recent", async(req: any, res: any) => {
 app.get("/info/commit/:commit", async(req: any, res: any) => {
     const commitid = req.params.commit;
     try {
-        const result = await turso.execute(
+        const result = await turso.execute({
             sql: "SELECT * FROM `commit` WHERE `id` = ?;",
             args: [commitid]
-        );
-        const rows = result.rows;
+        });
+        const rows: any = result.rows;
 
         let user = await clerk.users.getUser(rows[0]["authorid"]);
         let author = user.firstName + " " + user.lastName;
 
-        const results = await turso.execute(
+        const results = await turso.execute({
             sql: "SELECT * FROM `file` WHERE `commitid` = ?;",
             args: [commitid]
-        );
+        });
         const files = results.rows;
         let output = {
             author: author,
@@ -153,17 +153,16 @@ app.get("/info/permissions/:email", async(req: any, res: any) => {
     const id: string = users[0]["id"];
     console.log(id)
     try {
-        const result = await turso.execute(
-            sql: "SELECT * FROM permission WHERE userid = ? ORDER BY id DESC LIMIT 1;",
+        const result = await turso.execute({
+            sql: "SELECT * FROM `permission` WHERE `userid` = ? ORDER BY `id` DESC LIMIT 1;",
             args: [id]
-        );
-        const rows = result;
+        });
+        const rows: any = result.rows;
         if(rows.length === 0) {
-            await turso.execute(
-                sql:"INSERT INTO permission(userid, projectid, level) VALUES (?, 0, 0)",
+            await turso.execute({
+                sql:"INSERT INTO `permission`(userid, projectid, level) VALUES (?, 0, 0)",
                 args: [id],
-                "write"
-            );
+            });
             res.send({
                 "result": true,
                 "level": 0
@@ -202,10 +201,10 @@ app.post("/permissions", async(req: any, res: any) => {
             return;
         }
         const userID = users[0]["id"];
-        const userLevel = await getPermissionLevel(userID, projectID);
+        const userLevel: any = await getPermissionLevel(userID, projectID);
 
         // get the permission level of the setter
-        let setterLevel: number = await getPermissionLevel(setterID, projectID);
+        let setterLevel: any = await getPermissionLevel(setterID, projectID);
         if (setterLevel < 2 || (permissionLevel >= setterLevel && setterLevel != 3) || userLevel >= setterLevel) {
             res.send({
                 "result": "no permission"
@@ -215,10 +214,10 @@ app.post("/permissions", async(req: any, res: any) => {
 
         // set the permission level
         try {
-            await pool.execute(
-                "INSERT INTO permission(userid, projectid, level) VALUES (?, ?, ?)",
-                [userID, projectID, permissionLevel]
-            );
+            await turso.execute({
+                sql: "INSERT INTO `permission`(userid, projectid, level) VALUES (?, ?, ?)",
+                args: [userID, projectID, permissionLevel],
+            });
         } catch(e: any) {
             console.error(e.message);
         }
@@ -241,22 +240,24 @@ app.get("/info/project", async(req: any, res: any) => {
             files: []
         };
         // get latest commit #
-        let [rows, fields] = await pool.execute(
-            "SELECT MAX(commitid) as latest FROM file", []
+        const results = await turso.execute(
+            "SELECT MAX(`commitid`) as latest FROM `file`"
         );
+        const rows: any = results.rows;
         output.commit = rows[0]["latest"];
 
         // get files
-        [rows, fields] = await pool.execute(
-            "SELECT a.path, a.commitid, a.size, a.hash, a.s3key FROM file a \
+        const fileResults = await turso.execute(
+            "SELECT a.path, a.commitid, a.size, a.hash, a.s3key FROM `file` a \
             INNER JOIN ( \
                 SELECT path, MAX(id) id \
-                FROM file \
+                FROM `file` \
                 GROUP BY path \
             ) b ON a.path = b.path AND a.id = b.id \
             "
         );
-        output.files = rows;
+        const fileRows: any = fileResults.rows;
+        output.files = fileRows;
 
         // send response
         res.send(JSON.stringify(output));
@@ -272,12 +273,10 @@ app.get("/info/file/:path", (req: any, res: any) => {
         const param: string = req.params.path;
         const path = param.replaceAll("|", "\\");
         console.log(path);
-        pool.execute(
-            'SELECT * FROM file WHERE path = ?', [path],
-            function(err: any, results: any, fields: any) {
-                console.log(results);
-            }
-        );
+        turso.execute({
+            sql: 'SELECT * FROM `file` WHERE `path` = ?',
+            args: [path],
+        });
     } catch(err) {
         console.error(err);
     }
@@ -288,13 +287,6 @@ app.get("/info/file/:path", (req: any, res: any) => {
 // get latest revision of each file
 app.get("/info/repo", (req: any, res: any) => {
     console.log("GET @ /info/repo");
-    pool.execute(
-        'SELECT * FROM file',
-        function(err: any, results: any, fields: any) {
-            console.log(results);
-            console.log(fields);
-        }
-    );
     res.send("asdf");
 });
 
@@ -306,9 +298,11 @@ app.get("/download/s3/:key", async(req: any, res: any) => {
     if (key) {
         // get filename by key
         try {
-            const [rows, fields] = await pool.execute(
-                "SELECT path FROM file WHERE s3key = ?", [key]
-            );
+            const result = await turso.execute({
+                sql: "SELECT `path` FROM `file` WHERE `s3key` = ?",
+                args: [key]
+            });
+            const rows: any = result.rows;
             console.log(rows[0].path)
             const filename = rows[0].path.split("\\")[rows[0].path.split("\\").length - 1];
 
@@ -340,10 +334,11 @@ app.get("/download/file/:path", async(req: any, res: any) => {
     const path = param.replaceAll("|", "\\");
 
     // get s3 key by path, with latest revision
-    const [rows, fields] = await pool.execute(
-        "SELECT s3key FROM file WHERE path = ? AND id = (SELECT MAX(id) FROM file WHERE path = ?);",
-        [path, path]
-    );
+    const result = await turso.execute({
+        sql: "SELECT s3key FROM file WHERE path = ? AND id = (SELECT MAX(id) FROM file WHERE path = ?);",
+        args: [path, path]
+    });
+    const rows: any = result.rows;
     if(rows.length == 0) {
         res.send({
             "s3Url": "dne",
@@ -395,10 +390,11 @@ app.post("/commit", async(req: any, res: any) => {
         message = message.substring(0, 500); 
         const fileCount = body["fileCount"];
         const timestamp = Date.now().toString();
-        const [rows, fields] = await pool.execute(
-            "SELECT * FROM commit WHERE id = ?;",
-            [commitID]
-        );
+        const results = await turso.execute({
+            sql: "SELECT * FROM `commit` WHERE `id` = ?;",
+            args: [commitID]
+        });
+        const rows: any = results.rows;
         console.log(rows[0]);
         if(rows[0]) {
             // commit already exists so return an error
@@ -407,14 +403,10 @@ app.post("/commit", async(req: any, res: any) => {
         }
 
         // at this point; we can create a commit
-        pool.execute(
-            'INSERT INTO commit(id, projectid, authorid, message, filecount, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
-            [commitID, projectID, authorID, message, fileCount, timestamp],
-            function(err: any, results: any, fields: any) {
-                console.log(results);
-                console.log(fields);
-            }
-        );
+        turso.execute({
+            sql: 'INSERT INTO commit(id, projectid, authorid, message, filecount, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+            args: [commitID, projectID, authorID, message, fileCount, timestamp],
+        });
         res.send({"isCommitFree": true});
         return;
     } catch(err: any) {
@@ -437,16 +429,10 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
         //console.log(changeType)
         if(req.file) {
             const s3key = req.file.key;
-            pool.execute(
-                'INSERT INTO file(path, commitid, size, hash, s3key, projectid) VALUES (?, ?, ?, ?, ?, ?)',
-                //'INSERT INTO file(path, commitid, size, hash, s3key, projectid, changetype) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                //[path, commit, size, hash, s3key, project, changeType],
-                [path, commit, size, hash, s3key, project],
-                function(err: any, results: any, fields: any) {
-                    console.log(results);
-                    console.log(fields);
-                }
-            );
+            turso.execute({
+                sql: 'INSERT INTO `file`(`path`, `commitid`, `size`, `hash`, `s3key`, `projectid`) VALUES (?, ?, ?, ?, ?, ?)',
+                args: [path, commit, size, hash, s3key, project],
+            });
             res.send({
                 "result": true,
                 "s3key": req.file.key,
@@ -455,14 +441,10 @@ app.post("/ingest", upload.single("key"), fileSizeLimitErrorHandler, (req: any, 
             return;
         }
         else {
-            pool.execute(
-                'INSERT INTO file(path, commitid, size, hash, projectid) VALUES (?, ?, ?, ?, ?)',
-                [path, commit, size, hash, project],
-                function(err: any, results: any, fields: any) {
-                    console.log(results);
-                    console.log(fields);
-                }
-            );
+            turso.execute({
+                sql: 'INSERT INTO `file`(path, commitid, size, hash, projectid) VALUES (?, ?, ?, ?, ?)',
+                args: [path, commit, size, hash, project],
+            });
             res.send({
                 "result": true,
                 "s3key": "deleted",
