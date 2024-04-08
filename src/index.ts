@@ -61,9 +61,9 @@ let CLIENT_VERSION = "0.5.0";
 app.get("/", (req: any, res: any) => {
     res.send(
     {
-        "hmm": "lol",
         "failures": fails,
-        "version": CLIENT_VERSION
+        "version": CLIENT_VERSION,
+        "turso?": "goes brrr"
     }
     );
 });
