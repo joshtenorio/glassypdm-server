@@ -104,6 +104,30 @@ app.get("/info/commit/recent", async(req: any, res: any) => {
     res.send("lol");
 });
 
+app.get("/info/commit/offset/:offset", async(req: any, res: any) => {
+    console.log("GET @ /info/commit/offset")
+    try {
+        const offset = req.params.offset;
+        console.log(offset)
+        let result = await turso.execute({
+            sql: "SELECT * FROM `commit` ORDER BY `id` DESC LIMIT 5 OFFSET ?;",
+            args: [offset]
+        }
+        );
+        let rows: any = result.rows;
+        
+        for(let i = 0; i < rows.length; i++) {
+            let user = await clerk.users.getUser(rows[i]["authorid"]);
+            rows[i].authorID = user.firstName + " " + user.lastName;
+        }
+        res.send(rows);
+        return;
+    } catch(err: any) {
+        console.error(err);
+    }
+    res.send("lol");
+});
+
 // get a specific commit by id
 app.get("/info/commit/:commit", async(req: any, res: any) => {
     const commitid = req.params.commit;
